@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>JS Bin</title>
+</head>
+<body>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Tabungan Saya</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --text: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    h2, h3 { margin-top: 0; font-size: 1.2rem; }
+    .balance-main {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .balance-main .label { font-size: 0.85rem; color: #1e40af; }
+    .balance-main .amount { font-size: 1.6rem; font-weight: bold; color: var(--primary); margin-top: 4px; }
+    
+    .balance-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .box {
+      padding: 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .box.locked {
+      grid-column: span 2;
+      background: #fffbeb;
+      border-color: #fef3c7;
+    }
+    .box .label { font-size: 0.75rem; color: #64748b; }
+    .box .amount { font-size: 1rem; font-weight: bold; margin-top: 2px; }
+    
+    form { display: flex; flex-direction: column; gap: 12px; }
+    label { font-size: 0.85rem; font-weight: 600; color: #4b5563; }
+    input, select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 1rem;
+      width: 100%;
+    }
+    button {
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:active { opacity: 0.9; }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .title { font-weight: 600; font-size: 0.95rem; }
+    .meta { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+    .badge-in { background: #dcfce7; color: var(--success); }
+    .badge-out { background: #fee2e2; color: var(--danger); }
+    .badge-locked { background: #fef3c7; color: var(--warning); }
+
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .text-warning { color: var(--warning); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Ringkasan Saldo -->
+  <div class="card">
+    <h2>Laporan Keuangan</h2>
+    <div class="balance-main">
+      <div class="label">Saldo Bisa Ditarik</div>
+      <div id="availableBalance" class="amount">Rp 0</div>
+    </div>
+    <div class="balance-grid">
+      <div class="box">
+        <div class="label">Total Uang Masuk</div>
+        <div id="totalIn" class="amount text-success">Rp 0</div>
+      </div>
+      <div class="box">
+        <div class="label">Total Pengeluaran</div>
+        <div id="totalOut" class="amount text-danger">Rp 0</div>
+      </div>
+      <div class="box locked">
+        <div class="label">Tabungan Terkunci (Tidak Bisa Ditarik)</div>
+        <div id="totalLocked" class="amount text-warning">Rp 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Transaksi -->
+  <div class="card">
+    <h3>Catat Transaksi Baru</h3>
+    <form id="txForm">
+      <div>
+        <label>Jenis Transaksi</label>
+        <select id="type" required>
+          <option value="in">Pemasukan (Uang Masuk)</option>
+          <option value="out">Pengeluaran (Uang Keluar)</option>
+          <option value="locked">Tabungan Terkunci</option>
+        </select>
+      </div>
+      <div>
+        <label>Nama / Keterangan / Pengirim</label>
+        <input type="text" id="name" placeholder="cth: Transfer Budi / Gaji / Beli Bensin" required>
+      </div>
+      <div>
+        <label>Nominal (Rp)</label>
+        <input type="number" id="amount" placeholder="0" required>
+      </div>
+      <button type="submit">Simpan Transaksi</button>
+    </form>
+  </div>
+
+  <!-- Riwayat Transaksi -->
+  <div class="card">
+    <h3>Riwayat Transaksi</h3>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+  let transactions = JSON.parse(localStorage.getItem('my_app_savings')) || [];
+
+  function formatRp(val) {
+    return 'Rp ' + Number(val).toLocaleString('id-ID');
+  }
+
+  function updateUI() {
+    let income = 0, expense = 0, locked = 0;
+    const listEl = document.getElementById('historyList');
+    listEl.innerHTML = '';
+
+    if (transactions.length === 0) {
+      listEl.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 12px;">Belum ada riwayat transaksi.</div>';
+    }
+
+    // Urutkan transaksi terbaru di atas
+    [...transactions].reverse().forEach((tx) => {
+      if (tx.type === 'in') income += tx.amount;
+      if (tx.type === 'out') expense += tx.amount;
+      if (tx.type === 'locked') locked += tx.amount;
+
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      
+      let badgeHtml = '';
+      let priceClass = '';
+      let prefix = '';
+
+      if (tx.type === 'in') {
+        badgeHtml = '<span class="badge badge-in">UANG MASUK</span>';
+        priceClass = 'text-success';
+        prefix = '+';
+      } else if (tx.type === 'out') {
+        badgeHtml = '<span class="badge badge-out">PENGELUARAN</span>';
+        priceClass = 'text-danger';
+        prefix = '-';
+      } else {
+        badgeHtml = '<span class="badge badge-locked">TERKUNCI</span>';
+        priceClass = 'text-warning';
+        prefix = '+';
+      }
+
+      item.innerHTML = `
+        <div>
+          ${badgeHtml}
+          <div class="title">${tx.name}</div>
+          <div class="meta">${tx.datetime}</div>
+        </div>
+        <div class="amount ${priceClass}" style="font-weight: bold;">
+          ${prefix} ${formatRp(tx.amount)}
+        </div>
+      `;
+      listEl.appendChild(item);
+    });
+
+    const available = income - expense - locked;
+
+    document.getElementById('availableBalance').innerText = formatRp(available);
+    document.getElementById('totalIn').innerText = formatRp(income);
+    document.getElementById('totalOut').innerText = formatRp(expense);
+    document.getElementById('totalLocked').innerText = formatRp(locked);
+
+    localStorage.setItem('my_app_savings', JSON.stringify(transactions));
+  }
+
+  document.getElementById('txForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const type = document.getElementById('type').value;
+    const name = document.getElementById('name').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    
+    // Format otomatis Tanggal dan Jam pengiriman/pemasukan
+    const now = new Date();
+    const datetime = now.toLocaleDateString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }) + ' jam ' + now.toLocaleTimeString('id-ID', {
+      hour: '2-digit', minute: '2-digit'
+    }) + ' WIB';
+
+    transactions.push({ type, name, amount, datetime });
+    updateUI();
+
+    this.reset();
+  });
+
+  updateUI();
+</script>
+
+</body>
+</html>
